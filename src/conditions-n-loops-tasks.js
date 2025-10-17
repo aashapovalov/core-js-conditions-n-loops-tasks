@@ -304,7 +304,6 @@ function isContainNumber(num, digit) {
  *  [1, 2, 3, 4, 5] => -1   => no balance element
  */
 function getBalanceIndex(arr) {
-  let index = -1;
   for (let i = 0; i < arr.length; i += 1) {
     let sumBeg = 0;
     let sumEnd = 0;
@@ -314,11 +313,11 @@ function getBalanceIndex(arr) {
     for (let k = i + 1; k < arr.length; k += 1) {
       sumEnd += arr[k];
     }
-    if (sumEnd === sumBeg) {
-      index = i;
+    if (sumBeg === sumEnd) {
+      return i;
     }
   }
-  return index;
+  return -1;
 }
 
 /**
@@ -438,31 +437,43 @@ function rotateMatrix(matrix) {
  *  [-2, 9, 5, -3]  => [-3, -2, 5, 9]
  */
 function sortByAsc(arr) {
-  const n = arr.length;
-  let numMin = 0;
-  let indexMin = 0;
+  const array = arr;
+  const n = array.length;
 
-  const copy = [];
-  for (let i = 0; i < n; i += 1) {
-    copy[i] = arr[i];
+  function swap(i, j) {
+    const t = array[i];
+    array[i] = array[j];
+    array[j] = t;
   }
-  for (let j = 0; j < n - 1; j += 1) {
-    indexMin = j;
-    numMin = copy[j];
-    for (let k = j + 1; k < n; k += 1) {
-      if (numMin > copy[k]) {
-        numMin = copy[k];
-        indexMin = k;
-      }
-    }
-    if (indexMin !== j) {
-      copy[indexMin] = copy[j];
-      copy[j] = numMin;
+
+  function siftDown(start, end) {
+    let root = start;
+    while (root <= end && end >= 0) {
+      const left = 2 * root + 1;
+      if (left > end) break;
+      const right = left + 1;
+
+      let largest = root;
+      if (left <= end && array[left] > array[largest]) largest = left;
+      if (right <= end && array[right] > array[largest]) largest = right;
+
+      if (largest === root) break;
+      swap(root, largest);
+      root = largest;
     }
   }
-  return copy;
+
+  for (let i = Math.floor((n - 2) / 2); i >= 0; i -= 1) {
+    siftDown(i, n - 1);
+  }
+
+  for (let end = n - 1; end > 0; end -= 1) {
+    swap(0, end);
+    siftDown(0, end - 1);
+  }
+
+  return array;
 }
-
 /**
  * Shuffles characters in a string so that the characters with an odd index are moved to the end of the string at each iteration.
  * Take into account that the string can be very long and the number of iterations is large. Consider how you can optimize your solution.
@@ -480,8 +491,45 @@ function sortByAsc(arr) {
  *  '012345', 3 => '024135' => '043215' => '031425'
  *  'qwerty', 3 => 'qetwry' => 'qtrewy' => 'qrwtey'
  */
-function shuffleChar(/* str, iterations */) {
-  throw new Error('Not implemented');
+function shuffleChar(str, iterations) {
+  const n = str.length;
+  if (iterations === 0 || n < 2) return str;
+
+  const p = [];
+  const half = Math.floor((n + 1) / 2);
+  for (let j = 0; j < n; j += 1) {
+    if (j % 2 === 0) p[j] = j / 2;
+    else p[j] = half + (j - 1) / 2;
+  }
+
+  const res = [];
+  const visited = [];
+  for (let i = 0; i < n; i += 1) visited[i] = false;
+
+  for (let s = 0; s < n; s += 1) {
+    if (!visited[s]) {
+      const cycle = [];
+      let m = 0;
+      let cur = s;
+      do {
+        cycle[m] = cur;
+        visited[cur] = true;
+        cur = p[cur];
+        m += 1;
+      } while (cur !== s);
+
+      const shift = iterations % m;
+      for (let t = 0; t < m; t += 1) {
+        const fromIdx = cycle[t];
+        const toIdx = cycle[(t + shift) % m];
+        res[toIdx] = str[fromIdx];
+      }
+    }
+  }
+
+  let out = '';
+  for (let i = 0; i < n; i += 1) out += res[i];
+  return out;
 }
 
 /**
@@ -502,8 +550,50 @@ function shuffleChar(/* str, iterations */) {
  * 321321   => 322113
  *
  */
-function getNearestBigger(/* number */) {
-  throw new Error('Not implemented');
+function getNearestBigger(number) {
+  const num = number;
+  if (num === 0) return number;
+
+  let len = 0;
+  let t = num;
+  while (t > 0) {
+    len += 1;
+    t = Math.floor(t / 10);
+  }
+
+  const a = new Array(len);
+  t = num;
+  for (let i = len - 1; i >= 0; i -= 1) {
+    a[i] = t % 10;
+    t = Math.floor(t / 10);
+  }
+
+  let i = len - 2;
+  while (i >= 0 && a[i] >= a[i + 1]) i -= 1;
+  if (i < 0) return number;
+
+  let j = len - 1;
+  while (a[j] <= a[i]) j -= 1;
+
+  let tmp = a[i];
+  a[i] = a[j];
+  a[j] = tmp;
+
+  let L = i + 1;
+  let R = len - 1;
+  while (L < R) {
+    tmp = a[L];
+    a[L] = a[R];
+    a[R] = tmp;
+    L += 1;
+    R -= 1;
+  }
+
+  let ans = 0;
+  for (let k = 0; k < len; k += 1) {
+    ans = ans * 10 + a[k];
+  }
+  return ans;
 }
 
 module.exports = {
